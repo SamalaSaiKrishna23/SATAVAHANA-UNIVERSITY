@@ -8,7 +8,11 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   console.error('Set JWT_SECRET (32+ chars) in .env'); process.exit(1);
 }
 const app = express();
-app.use(helmet(), cors({ origin: process.env.CLIENT_URL || 'https://satavahana-university.vercel.app/' }), express.json({ limit: '100kb' }));
+app.use(cors({
+  origin: 'https://satavahana-university.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, message: { error: 'Too many login attempts. Try again later.' } }));
 app.get('/', (req, res) => {
   res.send('Satavahana University Backend is running!');
