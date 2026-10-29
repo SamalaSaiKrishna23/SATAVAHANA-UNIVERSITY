@@ -1,0 +1,26 @@
+require('dotenv').config();
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('Set JWT_SECRET (32+ chars) in .env'); process.exit(1);
+}
+const app = express();
+app.use(helmet(), cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }), express.json({ limit: '100kb' }));
+app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, message: { error: 'Too many login attempts. Try again later.' } }));
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/faculty', require('./routes/faculty'));
+app.use('/api/student', require('./routes/student'));
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
+app.use((e, req, res, next) => { // eslint-disable-line
+  if (e.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Duplicate entry' });
+  if (e.code === 'ER_ROW_IS_REFERENCED_2') return res.status(409).json({ error: 'Record is in use by other data' });
+  if (e.status) return res.status(e.status).json({ error: e.message });
+  console.error(e); res.status(500).json({ error: 'Server error' });
+});
+app.listen(process.env.PORT || 4000, () => console.log(`API running on :${process.env.PORT || 4000}`));

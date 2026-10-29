@@ -1,0 +1,11 @@
+PORT=4000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=change_me
+DB_NAME=attendance_db
+JWT_SECRET=replace-with-a-random-string-of-at-least-32-characters
+JWT_EXPIRES=8h
+CLIENT_URL=http://localhost:5173
+ATTENDANCE_THRESHOLD=75
+SEED_ADMIN_PASSWORD=Admin@123
+SEED_PASSWORD=Welcome@123
