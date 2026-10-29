@@ -23,4 +23,8 @@ app.use((e, req, res, next) => { // eslint-disable-line
   if (e.status) return res.status(e.status).json({ error: e.message });
   console.error(e); res.status(500).json({ error: 'Server error' });
 });
-app.listen(process.env.PORT || 4000, () => console.log(`API running on :${process.env.PORT || 4000}`));
+const PORT = process.env.PORT || 4000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
