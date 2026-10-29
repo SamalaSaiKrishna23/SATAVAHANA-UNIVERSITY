@@ -1,7 +1,7 @@
 export async function api(path, { method = 'GET', body } = {}) {
   const t = localStorage.getItem('token');
   const r = await fetch(
-  `${import.meta.env.VITE_API_URL}/api${path}`,
+  `${import.meta.env.VITE_API_URL}/api${path}`, 
   {
     method,
     headers: { 'Content-Type': 'application/json', ...(t && { Authorization: `Bearer ${t}` }) },
