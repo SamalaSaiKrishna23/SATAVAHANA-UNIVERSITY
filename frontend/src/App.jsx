@@ -57,24 +57,20 @@ function Login({ onLogin }) {
     e.preventDefault(); setErr('');
     try { const r = await api('/auth/login', { method: 'POST', body: f }); localStorage.setItem('token', r.token); onLogin(r.user); } catch (x) { setErr(x.message); }
   };
-  const [showPassword, setShowPassword] = useState(false);
   return (
-    <div className="password-container">
-  <input
-    type={showPassword ? "text" : "password"}
-    placeholder="Enter password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-  />
-
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="password-toggle"
-  >
-    {showPassword ? "🙈" : "👁"}
-  </button>
-</div>
+    <div className="min-h-screen flex flex-col bg-slate-100">
+      <Header />
+      <div className="flex-1 grid place-items-center p-4">
+        <form onSubmit={submit} className="bg-white rounded-2xl shadow p-6 w-full max-w-sm space-y-4">
+          <h2 className="text-xl font-bold text-slate-800">Sign in</h2>
+          <Field label="User ID" required value={f.userId} onChange={(e) => setF({ ...f, userId: e.target.value })} />
+          <Field label="Password" type="password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+          {err && <p className="text-sm text-red-600">{err}</p>}
+          <Btn className="w-full">Sign in</Btn>
+        </form>
+      </div>
+      <Footer />
+    </div>
   );
 }
 
