@@ -36,7 +36,7 @@ const { nextUserId, fmt } = require('./utils');
     'Vivek Kumar', 'Ananya Singh', 'Rahul Verma', 'Neha Joshi', 'Aditya Rao', 'Kavya Menon', 'Siddharth Patel', 'Pooja Bhat',
     'Manish Yadav', 'Lakshmi Devi', 'Faizan Khan', 'Tanvi Kulkarni'];
   const students = [];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 70; i++) {
     const dept = i < 12 ? 'CSE' : 'ECE', uid = await mkUser('STU', dept, names[i], 'student');
     const id = (await db.query('INSERT INTO students(user_id,department_id,year,semester,section,roll_no) VALUES(?,?,2,3,"A",?)',
       [uid, D[dept], `R${String(i + 1).padStart(3, '0')}`]))[0].insertId;
