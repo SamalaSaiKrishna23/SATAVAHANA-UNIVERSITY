@@ -3,7 +3,6 @@
 export const COLLEGE = {
   name: 'UNIVERSITY COLLEGE OF ENGINEERING',
   tagline: 'Attendance Management System',
-  logo: 'frontend/public/logo.png',
   address: 'GANDHI-NAGAR, HUSNABAD, TELANGANA- 505467',
   email: 'info@yourcollege.edu',
   phone: '+91 00000 00000',
