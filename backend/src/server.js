@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -20,7 +21,9 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/faculty', require('./routes/faculty'));
 app.use('/api/student', require('./routes/student'));
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
-
+const dist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(dist));
+app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html')));
 app.use((e, req, res, next) => { // eslint-disable-line
   if (e.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Duplicate entry' });
   if (e.code === 'ER_ROW_IS_REFERENCED_2') return res.status(409).json({ error: 'Record is in use by other data' });
