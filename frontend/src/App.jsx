@@ -9,7 +9,7 @@ import { Summary, Calendar } from './pages/Student';
 function Header() {
   return (
     <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
-      <img src={COLLEGE.logo} alt="College logo" className="h-12 w-12 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      <img src={COLLEGE.logo} alt="College logo" className="h-12 w-12 object-contain" onLoad={() => console.logo("logo loaded successfully")}onError={(e) => console.error("logo failed:",e.currentTarget.src)}/>
       <div>
         <h1 className="text-lg font-bold text-slate-800 leading-tight">{COLLEGE.name}</h1>
         <p className="text-xs text-slate-500">{COLLEGE.tagline}</p>
