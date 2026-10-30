@@ -11,7 +11,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 const app = express();
 app.set('trust proxy', 1);
 app.use(helmet(), cors({ origin: process.env.CLIENT_URL || 'https://satavahana-university.vercel.app' }), express.json({ limit: '100kb' }));
-app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, message: { error: 'Too many login attempts. Try again later.' } }));
+app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, message: { error: 'Too many login attempts. Try again later.' } }));
 app.get('/', (req, res) => {
   res.send('Satavahana University Backend is running!');
 });
