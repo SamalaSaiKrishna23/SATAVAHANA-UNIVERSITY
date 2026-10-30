@@ -30,7 +30,7 @@ const { nextUserId, fmt } = require('./utils');
   const A = [];
   for (const [fi, code, dept] of [[0, 'CS201', 'CSE'], [0, 'CS202', 'CSE'], [1, 'CS203', 'CSE'], [2, 'EC201', 'ECE'], [2, 'EC202', 'ECE']]) {
     A.push({ dept, subject: S[code], faculty: F[fi],
-      id: (await db.query('INSERT INTO class_assignments(faculty_id,subject_id,department_id,year,section) VALUES(?,?,?,2,"A")', [F[fi], S[code], D[dept]]))[0].insertId });
+      id: (await db.query('INSERT INTO class_assignments(faculty_id,subject_id,department_id,year,section) VALUES(?,?,?,?,?)', [F[fi], S[code], D[dept],2,'A']))[0].insertId });
   }
   const names = ['Aarav Mehta', 'Diya Sharma', 'Rohan Iyer', 'Sneha Pillai', 'Karthik Reddy', 'Priya Nair', 'Arjun Das', 'Ishita Gupta',
     'Vivek Kumar', 'Ananya Singh', 'Rahul Verma', 'Neha Joshi', 'Aditya Rao', 'Kavya Menon', 'Siddharth Patel', 'Pooja Bhat',
