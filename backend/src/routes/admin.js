@@ -3,14 +3,18 @@ const bcrypt = require('bcryptjs');
 const { z } = require('zod');
 const db = require('../db');
 const { wrap, auth, role, validate } = require('../middleware');
-const { err, tx, nextUserId, genPassword } = require('../utils');
+const { err, tx, genPassword } = require('../utils');
 router.use(auth, role('admin'));
 
 const PCT = (a = 'a') => `ROUND(100*SUM(${a}.status='Present')/COUNT(*),1)`;
-async function createUser(c, { prefix, deptId, name, email, role: r }) {
-  const [[d]] = await c.query('SELECT code FROM departments WHERE id=?', [deptId]);
+// The login ID is the ID the admin types in (roll no for students, faculty ID for faculty)
+const loginId = z.string().trim().min(3).max(30).regex(/^[A-Za-z0-9._-]+$/, 'only letters, numbers, . _ - allowed (no spaces)').transform((v) => v.toUpperCase());
+async function createUser(c, { userId, deptId, name, email, role: r }) {
+  const [[d]] = await c.query('SELECT id FROM departments WHERE id=?', [deptId]);
   if (!d) throw err(400, 'Invalid department');
-  const userId = await nextUserId(c, prefix, d.code), password = genPassword();
+  const [[dup]] = await c.query('SELECT id FROM users WHERE user_id=?', [userId]);
+  if (dup) throw err(409, `ID ${userId} already exists`);
+  const password = genPassword();
   const [x] = await c.query('INSERT INTO users(user_id,name,email,password_hash,role) VALUES(?,?,?,?,?)',
     [userId, name, email ?? null, await bcrypt.hash(password, 10), r]);
   return { pk: x.insertId, userId, password };
@@ -29,7 +33,7 @@ router.delete('/departments/:id', wrap(async (req, res) => { await db.query('DEL
 const stuSchema = z.object({
   name: z.string().min(2).max(100), email: z.string().email().nullish(),
   departmentId: z.number().int(), year: z.number().int().min(1).max(4), semester: z.number().int().min(1).max(8),
-  section: z.string().min(1).max(5), rollNo: z.string().max(30).nullish() });
+  section: z.string().min(1).max(5), rollNo: loginId });
 router.get('/students', wrap(async (req, res) => {
   const { departmentId, year, section, q } = req.query, w = [], p = [];
   if (departmentId) { w.push('s.department_id=?'); p.push(departmentId); }
@@ -45,9 +49,9 @@ router.get('/students', wrap(async (req, res) => {
 router.post('/students', validate(stuSchema), wrap(async (req, res) => {
   const b = req.body;
   const out = await tx(async (c) => {
-    const u = await createUser(c, { prefix: 'STU', deptId: b.departmentId, name: b.name, email: b.email, role: 'student' });
+    const u = await createUser(c, { userId: b.rollNo, deptId: b.departmentId, name: b.name, email: b.email, role: 'student' });
     const [r] = await c.query('INSERT INTO students(user_id,department_id,year,semester,section,roll_no) VALUES(?,?,?,?,?,?)',
-      [u.pk, b.departmentId, b.year, b.semester, b.section.toUpperCase(), b.rollNo ?? null]);
+      [u.pk, b.departmentId, b.year, b.semester, b.section.toUpperCase(), b.rollNo]);
     return { id: r.insertId, userId: u.userId, initialPassword: u.password };
   });
   res.status(201).json(out); // initialPassword is shown only once
@@ -57,15 +61,15 @@ router.put('/students/:id', validate(stuSchema), wrap(async (req, res) => {
   await tx(async (c) => {
     const [[s]] = await c.query('SELECT user_id FROM students WHERE id=?', [req.params.id]);
     if (!s) throw err(404, 'Student not found');
-    await c.query('UPDATE users SET name=?, email=? WHERE id=?', [b.name, b.email ?? null, s.user_id]);
+    await c.query('UPDATE users SET user_id=?, name=?, email=? WHERE id=?', [b.rollNo, b.name, b.email ?? null, s.user_id]);
     await c.query('UPDATE students SET department_id=?, year=?, semester=?, section=?, roll_no=? WHERE id=?',
-      [b.departmentId, b.year, b.semester, b.section.toUpperCase(), b.rollNo ?? null, req.params.id]);
+      [b.departmentId, b.year, b.semester, b.section.toUpperCase(), b.rollNo, req.params.id]);
   });
   res.json({ message: 'Updated' });
 }));
 
 // ---------- Faculty ----------
-const facSchema = z.object({ name: z.string().min(2).max(100), email: z.string().email().nullish(),
+const facSchema = z.object({ facultyId: loginId, name: z.string().min(2).max(100), email: z.string().email().nullish(),
   departmentId: z.number().int(), designation: z.string().max(60).nullish() });
 router.get('/faculty', wrap(async (req, res) => {
   const [rows] = await db.query(`SELECT f.id, u.id userPk, u.user_id userId, u.name, u.email, u.is_active isActive,
@@ -76,7 +80,7 @@ router.get('/faculty', wrap(async (req, res) => {
 router.post('/faculty', validate(facSchema), wrap(async (req, res) => {
   const b = req.body;
   const out = await tx(async (c) => {
-    const u = await createUser(c, { prefix: 'FAC', deptId: b.departmentId, name: b.name, email: b.email, role: 'faculty' });
+    const u = await createUser(c, { userId: b.facultyId, deptId: b.departmentId, name: b.name, email: b.email, role: 'faculty' });
     const [r] = await c.query('INSERT INTO faculty(user_id,department_id,designation) VALUES(?,?,?)', [u.pk, b.departmentId, b.designation ?? null]);
     return { id: r.insertId, userId: u.userId, initialPassword: u.password };
   });
@@ -87,7 +91,7 @@ router.put('/faculty/:id', validate(facSchema), wrap(async (req, res) => {
   await tx(async (c) => {
     const [[f]] = await c.query('SELECT user_id FROM faculty WHERE id=?', [req.params.id]);
     if (!f) throw err(404, 'Faculty not found');
-    await c.query('UPDATE users SET name=?, email=? WHERE id=?', [b.name, b.email ?? null, f.user_id]);
+    await c.query('UPDATE users SET user_id=?, name=?, email=? WHERE id=?', [b.facultyId, b.name, b.email ?? null, f.user_id]);
     await c.query('UPDATE faculty SET department_id=?, designation=? WHERE id=?', [b.departmentId, b.designation ?? null, req.params.id]);
   });
   res.json({ message: 'Updated' });

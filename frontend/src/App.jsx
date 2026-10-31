@@ -51,23 +51,45 @@ function ChangePassword({ forced, onDone }) {
   );
 }
 
+const ROLES = {
+  student: { title: 'Student Login', btn: 'Student Login', idLabel: 'Roll No', hint: 'View your attendance', cls: 'bg-emerald-600 hover:bg-emerald-700' },
+  faculty: { title: 'Faculty Login', btn: 'Faculty Login', idLabel: 'Faculty ID', hint: 'Mark and review attendance', cls: 'bg-indigo-600 hover:bg-indigo-700' },
+  admin: { title: 'Admin Login', btn: 'Admin Login', idLabel: 'Admin ID', hint: 'Manage students, faculty and setup', cls: 'bg-slate-800 hover:bg-slate-900' },
+};
+
 function Login({ onLogin }) {
+  const [role, setRole] = useState(null);
   const [f, setF] = useState({ userId: '', password: '' }), [err, setErr] = useState('');
+  const pick = (r) => { setRole(r); setF({ userId: '', password: '' }); setErr(''); };
   const submit = async (e) => {
     e.preventDefault(); setErr('');
-    try { const r = await api('/auth/login', { method: 'POST', body: f }); localStorage.setItem('token', r.token); onLogin(r.user); } catch (x) { setErr(x.message); }
+    try { const r = await api('/auth/login', { method: 'POST', body: { ...f, role } }); localStorage.setItem('token', r.token); onLogin(r.user); } catch (x) { setErr(x.message); }
   };
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
       <Header />
       <div className="flex-1 grid place-items-center p-4">
-        <form onSubmit={submit} className="bg-white rounded-2xl shadow p-6 w-full max-w-sm space-y-4">
-          <h2 className="text-xl font-bold text-slate-800">Sign in</h2>
-          <Field label="User ID" required value={f.userId} onChange={(e) => setF({ ...f, userId: e.target.value })} />
-          <Field label="Password" type="password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
-          {err && <p className="text-sm text-red-600">{err}</p>}
-          <Btn className="w-full">Sign in</Btn>
-        </form>
+        {!role ? (
+          <div className="bg-white rounded-2xl shadow p-6 w-full max-w-sm space-y-3">
+            <h2 className="text-xl font-bold text-slate-800 text-center">Welcome</h2>
+            <p className="text-sm text-slate-500 text-center">Choose how you want to sign in</p>
+            {Object.entries(ROLES).map(([k, v]) => (
+              <button key={k} onClick={() => pick(k)} className={`w-full text-left text-white rounded-xl px-4 py-3 ${v.cls}`}>
+                <span className="block font-semibold">{v.btn}</span>
+                <span className="block text-xs opacity-80">{v.hint}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <form onSubmit={submit} className="bg-white rounded-2xl shadow p-6 w-full max-w-sm space-y-4">
+            <button type="button" onClick={() => setRole(null)} className="text-sm text-slate-500 hover:text-slate-800">← Back</button>
+            <h2 className="text-xl font-bold text-slate-800">{ROLES[role].title}</h2>
+            <Field label={ROLES[role].idLabel} required autoFocus value={f.userId} onChange={(e) => setF({ ...f, userId: e.target.value })} />
+            <Field label="Password" type="password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+            {err && <p className="text-sm text-red-600">{err}</p>}
+            <Btn className="w-full">Sign in</Btn>
+          </form>
+        )}
       </div>
       <Footer />
     </div>
